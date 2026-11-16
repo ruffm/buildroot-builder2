@@ -8,7 +8,9 @@ Settings shared by several sets live in `config-common/`. A set's `includes`
 file lists the ones it uses, one per line; `02-build-baseline.sh` writes them
 first, then the set's `defconfig`, then `features.fragment`, so a set can
 override any shared line. Every set includes `v86-platform.config` (CPU,
-kernel version, cpio rootfs, QEMU board scripts). The Snort sets also share
+toolchain, kernel version, cpio rootfs, QEMU board scripts). The toolchain is
+Bootlin's prebuilt x86-i686 glibc one, which Buildroot downloads instead of
+compiling binutils, GCC and glibc on every build; it always includes C++. The Snort sets also share
 one kernel config, `config-common/snort-linux.config`.
 
 Required files:
