@@ -87,6 +87,10 @@ config-sets/<name>/
   features.fragment
   required-commands.txt
   README.md
+  includes            optional: shared files from config-common/
+config-common/
+  v86-platform.config shared by every set (CPU, kernel version, cpio rootfs)
+  snort-linux.config  the Snort sets' kernel config
 ```
 
 Current sets and their intended lab payloads:
@@ -104,7 +108,7 @@ Every configuration directory contains all four authoritative inputs:
 
 | File | Role |
 | --- | --- |
-| `defconfig` | Complete Buildroot configuration loaded by the build script |
+| `defconfig` | The set's Buildroot configuration, written after the shared files its `includes` lists |
 | `features.fragment` | Human-reviewable list of the profile's significant package selections |
 | `required-commands.txt` | Commands that must be present in the finished guest |
 | `README.md` | Profile scope, rationale, and profile-specific validation notes |

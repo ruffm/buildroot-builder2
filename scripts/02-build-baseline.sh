@@ -14,6 +14,7 @@ fi
 . "$ENV_FILE"
 
 CONFIG_ROOT="$BUILDER_DIR/config-sets"
+COMMON_ROOT="$BUILDER_DIR/config-common"
 JOBS=${JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 2)}
 
 mapfile -t CONFIG_SETS < <(find "$CONFIG_ROOT" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)
@@ -49,9 +50,26 @@ if [ ! -f "$DEFCONFIG" ]; then
   exit 1
 fi
 
+# Shared settings: config-sets/<name>/includes lists files in config-common/,
+# one per line, written before the set's defconfig (so the set can override).
+INCLUDE_FILES=()
+if [ -f "$CONFIG_DIR/includes" ]; then
+  while read -r include; do
+    include=${include%%#*}
+    include=$(echo "$include" | tr -d '[:space:]')
+    [ -n "$include" ] || continue
+    [ -f "$COMMON_ROOT/$include" ] || { echo "$CONFIG_DIR/includes: $COMMON_ROOT/$include not found" >&2; exit 1; }
+    INCLUDE_FILES+=("$COMMON_ROOT/$include")
+  done < "$CONFIG_DIR/includes"
+fi
+
 mkdir -p "$BUILD_OUTPUT" "$PACKAGE_DIR/images" "$PACKAGE_DIR/configs" "$PACKAGE_DIR/logs" "$PACKAGE_DIR/manifest"
 
-cp "$DEFCONFIG" "$BUILD_OUTPUT/.config"
+: > "$BUILD_OUTPUT/.config"
+for include in "${INCLUDE_FILES[@]}"; do
+  cat "$include" >> "$BUILD_OUTPUT/.config"
+done
+cat "$DEFCONFIG" >> "$BUILD_OUTPUT/.config"
 if [ -f "$FRAGMENT" ]; then
   cat "$FRAGMENT" >> "$BUILD_OUTPUT/.config"
 fi
@@ -79,6 +97,10 @@ cp "$BZIMAGE" "$PACKAGE_DIR/images/${SELECTED}-bzImage"
 cp "$ROOTFS" "$PACKAGE_DIR/images/${SELECTED}-rootfs.cpio.gz"
 cp "$BUILD_OUTPUT/.config" "$PACKAGE_DIR/configs/final-buildroot.config"
 cp "$DEFCONFIG" "$PACKAGE_DIR/configs/starting.defconfig"
+for include in "${INCLUDE_FILES[@]}"; do
+  mkdir -p "$PACKAGE_DIR/configs/common"
+  cp "$include" "$PACKAGE_DIR/configs/common/"
+done
 [ ! -f "$FRAGMENT" ] || cp "$FRAGMENT" "$PACKAGE_DIR/configs/features.fragment"
 [ ! -f "$CONFIG_DIR/required-commands.txt" ] || cp "$CONFIG_DIR/required-commands.txt" "$PACKAGE_DIR/manifest/required-commands.txt"
 
