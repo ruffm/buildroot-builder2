@@ -1,5 +1,6 @@
 # PolyLinux Basic runtime and setup tools only. Do not include FM-level packages here.
 BR2_PACKAGE_BUSYBOX=y
+BR2_PACKAGE_BUSYBOX_SHOW_OTHERS=y
 BR2_PACKAGE_BASH=y
 BR2_PACKAGE_FILE=y
 BR2_PACKAGE_FINDUTILS=y
